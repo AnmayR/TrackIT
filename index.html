@@ -1,0 +1,389 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIOS PCB Study Tracker</title>
+<style>
+:root {
+  --bg:#f4f6fb;--card:#fff;--ink:#20283b;
+  --muted:#788196;--blue:#23386b;--green:#15976a;
+  --line:#e5e9f1;--soft:#edf1fa;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+font-family:Inter,Arial,sans-serif}
+header{background:var(--blue);color:white;padding:25px 6%}
+header h1{margin:0;font-size:26px}
+header p{opacity:.8;margin:7px 0 0}
+main{max-width:1150px;margin:auto;padding:22px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.card{background:var(--card);border:1px solid var(--line);
+border-radius:14px;padding:18px;margin-bottom:15px}
+.stat{font-size:30px;font-weight:750;margin:10px 0}
+.muted{color:var(--muted);font-size:13px}
+.bar{height:9px;background:#e9edf5;border-radius:20px;
+overflow:hidden;margin-top:12px}
+.bar span{display:block;height:100%;background:var(--green);
+transition:width .3s}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}
+button,.btn{border:0;border-radius:9px;padding:11px 15px;
+background:var(--blue);color:white;cursor:pointer;font-weight:600}
+button.secondary{background:var(--soft);color:var(--ink)}
+button.danger{background:#fee9e9;color:#b42318}
+button:disabled{opacity:.5;cursor:not-allowed}
+input,select,textarea{width:100%;padding:11px;
+border:1px solid var(--line);border-radius:8px;
+margin:6px 0 13px;font:inherit;background:white}
+label{font-size:13px;font-weight:600}
+.form{max-width:650px}
+.hidden{display:none!important}
+.chapter{background:white;border:1px solid var(--line);
+border-radius:11px;padding:15px;margin:10px 0}
+.chapter h3{font-size:15px;margin:0 0 13px}
+.checks{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
+.checks label{display:flex;align-items:center;gap:6px;
+font-weight:normal;font-size:12px}
+.checks input{width:auto;margin:0}
+.record{padding:13px 0;border-bottom:1px solid var(--line)}
+.subject-title{margin-top:25px}
+#notice{font-size:13px;color:var(--green);margin:10px 0}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.pill{display:inline-block;background:#eaf5ef;color:#16764f;
+padding:5px 9px;border-radius:20px;font-size:11px}
+footer{text-align:center;color:var(--muted);padding:20px}
+@media(max-width:750px){
+ main{padding:13px}
+ .grid{grid-template-columns:1fr}
+ .checks{grid-template-columns:repeat(2,1fr)}
+ header{padding:22px 17px}
+}
+</style>
+</head>
+<body>
+
+<header>
+<h1>NIOS PCB Study Tracker</h1>
+<p>Class 12 · April 2027 Public Examination</p>
+</header>
+
+<main>
+<section class="grid">
+ <div class="card">
+  <div class="muted">Overall completion</div>
+  <div class="stat" id="overall">0%</div>
+  <div class="bar"><span id="overallBar"></span></div>
+ </div>
+ <div class="card">
+  <div class="muted">Completed chapters</div>
+  <div class="stat" id="completed">0/56</div>
+  <div class="muted">Public Examination syllabus</div>
+ </div>
+ <div class="card">
+  <div class="muted">Total study hours</div>
+  <div class="stat" id="hours">0</div>
+  <div class="muted">Recorded study time</div>
+ </div>
+</section>
+
+<section class="grid" id="subjectStats"></section>
+
+<nav>
+<button data-tab="chapters">Chapters</button>
+<button class="secondary" data-tab="log">Study Log</button>
+<button class="secondary" data-tab="tests">Tests</button>
+<button class="secondary" data-tab="backup">Backup</button>
+</nav>
+
+<div id="notice"></div>
+
+<section id="chapters">
+ <div class="card">
+  <h2>Chapter Progress</h2>
+  <p class="muted">Five stages for every PE chapter.</p>
+  <input id="search" placeholder="Search a chapter..."
+  oninput="renderChapters()">
+  <select id="filter" onchange="renderChapters()">
+   <option>All</option><option>Physics</option>
+   <option>Chemistry</option><option>Biology</option>
+  </select>
+  <div id="chapterList"></div>
+ </div>
+</section>
+
+<section id="log" class="hidden">
+ <div class="card form">
+  <h2>Daily Study Log</h2>
+  <form id="logForm">
+   <label>Date</label><input type="date" name="date" required>
+   <label>Subject</label>
+   <select name="subject">
+    <option>Physics</option><option>Chemistry</option>
+    <option>Biology</option>
+   </select>
+   <label>Topic</label><input name="topic" required>
+   <label>Study hours</label>
+   <input type="number" name="hours" min=".25" max="24"
+   step=".25" required>
+   <label>Notes</label><textarea name="notes" rows="3"></textarea>
+   <button>Save Study Session</button>
+  </form>
+  <h3>Recent sessions</h3><div id="logRecords"></div>
+ </div>
+</section>
+
+<section id="tests" class="hidden">
+ <div class="card form">
+  <h2>Test Records</h2>
+  <form id="testForm">
+   <label>Date</label><input type="date" name="date" required>
+   <label>Subject</label>
+   <select name="subject">
+    <option>Physics</option><option>Chemistry</option>
+    <option>Biology</option>
+   </select>
+   <label>Test name</label><input name="name" required>
+   <label>Marks obtained</label>
+   <input type="number" name="marks" min="0" required>
+   <label>Maximum marks</label>
+   <input type="number" name="maximum" min="1" required>
+   <label>Remarks</label><textarea name="remarks"></textarea>
+   <button>Save Test</button>
+  </form>
+  <h3>Test history</h3><div id="testRecords"></div>
+ </div>
+</section>
+
+<section id="backup" class="hidden">
+ <div class="card">
+  <h2>Data Backup</h2>
+  <p>Download your progress and transfer it to another
+  device. Import a previous backup to restore it.</p>
+  <div class="actions">
+   <button onclick="exportData()">Download Backup</button>
+   <button class="secondary" onclick="document.getElementById('importFile').click()">
+   Import Backup</button>
+  </div>
+  <input type="file" id="importFile" accept=".json"
+  class="hidden" onchange="importData(event)">
+  <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
+  <button class="danger" onclick="resetData()">Reset All Data</button>
+  <p class="muted">Reset permanently clears the data saved in this browser.
+  Export a backup first if you may need it.</p>
+ </div>
+</section>
+</main>
+<footer>NIOS PCB Study Tracker · Your data stays in your browser</footer>
+
+<script>
+const chapters={
+Physics:[
+[3,"Laws of Motion"],[6,"Work, Energy and Power"],
+[9,"Properties of Fluids"],[11,"Thermodynamics"],
+[14,"Wave Phenomena"],[15,"Electric Charge and Electric Field"],
+[16,"Electric Potential and Capacitors"],[17,"Electric Current"],
+[18,"Magnetism and Magnetic Effect of Electric Current"],
+[19,"Electromagnetic Induction and Alternating Current"],
+[21,"Dispersion and Scattering of Light"],
+[22,"Wave Phenomena and Light"],[24,"Structure of Atoms"],
+[25,"Dual Nature of Radiation and Matter"],
+[26,"Nuclei and Radioactivity"],[27,"Nuclear Fission and Fusion"],
+[28,"Semiconductors and Semiconducting Devices"],
+[29,"Applications of Semiconductor Devices"]],
+Chemistry:[
+[1,"Atoms, Molecules and Chemical Arithmetic"],
+[2,"Atomic Structure"],[4,"Chemical Bonding"],[7,"Solutions"],
+[9,"Chemical Thermodynamics"],[12,"Ionic Equilibrium"],
+[13,"Electrochemistry"],[17,"Hydrogen and s-Block Elements"],
+[18,"General Characteristics of p-Block Elements"],
+[20,"p-Block Elements and their Compounds-II"],
+[21,"d-Block and f-Block Elements"],[22,"Coordination Compounds"],
+[23,"Nomenclature and General Principles"],[24,"Hydrocarbons"],
+[25,"Compounds of Carbon Containing Halogens"],
+[26,"Alcohols, Phenols and Ethers"],
+[27,"Aldehydes, Ketones and Carboxylic Acids"],
+[28,"Compounds of Carbon Containing Nitrogen"],
+[29,"Biomolecules"],[31,"Soaps, Detergents and Polymers"]],
+Biology:[
+[2,"The Kingdom Monera, Protoctista and Fungi"],
+[3,"Kingdom Plantae and Animalia"],
+[5,"Tissues and other Level of Organization"],
+[6,"Root System"],[7,"Shoot System"],[10,"Nitrogen Metabolism"],
+[11,"Photosynthesis"],[12,"Respiration in Plants"],
+[15,"Circulation of Body Fluids"],
+[17,"Coordination and Control – Nervous and Endocrine Systems"],
+[19,"Reproduction in Plants"],[21,"Reproduction and Population Control"],
+[22,"Principles of Genetics"],
+[23,"Molecular Inheritance and Gene Expression"],
+[25,"Principles of Ecology"],[28,"Nutrition and Health"],
+[30,"Immunobiology: An Introduction"],[31,"Biotechnology"]
+]};
+const stages=["MVS lectures","NIOS textbook","Notebook notes",
+"Chapter questions","Chapter revision"];
+const KEY="nios_pcb_tracker_v1";
+
+function initialData(){
+ let list=[];
+ Object.entries(chapters).forEach(([subject,items])=>
+ items.forEach(([lesson,title])=>list.push({
+ id:subject+"-"+lesson,subject,lesson,title,
+ stages:[false,false,false,false,false]
+ })));
+ return {chapters:list,logs:[],tests:[]};
+}
+let data=loadData();
+
+function loadData(){
+ try{
+  const saved=JSON.parse(localStorage.getItem(KEY));
+  if(saved && Array.isArray(saved.chapters) &&
+     Array.isArray(saved.logs) && Array.isArray(saved.tests)){
+    return saved;
+  }
+ }catch(e){}
+ return initialData();
+}
+function save(){
+ localStorage.setItem(KEY,JSON.stringify(data));
+}
+function escapeHTML(s){
+ return String(s??"").replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ })[c]);
+}
+function notify(message){
+ document.getElementById("notice").textContent=message;
+}
+function renderStats(){
+ const total=data.chapters.length;
+ const done=data.chapters.filter(c=>c.stages.every(Boolean)).length;
+ const percent=Math.round(done/total*100);
+ const hours=data.logs.reduce((a,b)=>a+Number(b.hours||0),0);
+ document.getElementById("overall").textContent=percent+"%";
+ document.getElementById("overallBar").style.width=percent+"%";
+ document.getElementById("completed").textContent=done+"/"+total;
+ document.getElementById("hours").textContent=hours.toFixed(1);
+ document.getElementById("subjectStats").innerHTML=
+ ["Physics","Chemistry","Biology"].map(s=>{
+  const list=data.chapters.filter(c=>c.subject===s);
+  const n=list.filter(c=>c.stages.every(Boolean)).length;
+  const p=Math.round(n/list.length*100);
+  return `<div class="card"><b>${s}</b>
+  <div class="stat">${n}/${list.length}</div>
+  <div class="muted">${p}% completed</div>
+  <div class="bar"><span style="width:${p}%"></span></div></div>`;
+ }).join("");
+}
+function renderChapters(){
+ const subject=document.getElementById("filter").value;
+ const query=document.getElementById("search").value.toLowerCase();
+ document.getElementById("chapterList").innerHTML=
+ ["Physics","Chemistry","Biology"].filter(s=>subject==="All"||s===subject)
+ .map(s=>{
+  const list=data.chapters.filter(c=>c.subject===s&&
+   (c.title.toLowerCase().includes(query)||
+    String(c.lesson).includes(query)));
+  if(!list.length)return "";
+  return `<h3 class="subject-title">${s}</h3>`+
+  list.map(c=>`<div class="chapter">
+   <h3>Lesson ${c.lesson}: ${escapeHTML(c.title)}
+   <span class="muted">${c.stages.filter(Boolean).length}/5</span></h3>
+   <div class="checks">${stages.map((stage,i)=>`
+    <label><input type="checkbox"
+     ${c.stages[i]?"checked":""}
+     onchange="toggleStage('${c.id}',${i},this.checked)">
+     ${stage}</label>`).join("")}
+   </div></div>`).join("");
+ }).join("")||"<p>No matching chapters.</p>";
+}
+function toggleStage(id,index,value){
+ const c=data.chapters.find(c=>c.id===id);
+ if(!c)return;
+ c.stages[index]=value;
+ save();renderStats();renderChapters();
+ notify("Progress saved automatically.");
+}
+function renderLogs(){
+ document.getElementById("logRecords").innerHTML=
+ data.logs.slice().reverse().slice(0,40).map((r,i)=>`
+ <div class="record"><b>${escapeHTML(r.subject)} · ${escapeHTML(r.topic)}</b>
+ <div class="muted">${escapeHTML(r.date)} · ${r.hours} hours</div>
+ ${escapeHTML(r.notes)}</div>`).join("")||"<p>No sessions recorded.</p>";
+}
+function renderTests(){
+ document.getElementById("testRecords").innerHTML=
+ data.tests.slice().reverse().map(r=>`
+ <div class="record"><b>${escapeHTML(r.name)} · ${escapeHTML(r.subject)}</b>
+ <div class="muted">${escapeHTML(r.date)} · ${r.marks}/${r.maximum}
+ (${(r.marks/r.maximum*100).toFixed(1)}%)</div>
+ ${escapeHTML(r.remarks)}</div>`).join("")||"<p>No tests recorded.</p>";
+}
+function renderAll(){
+ renderStats();renderChapters();renderLogs();renderTests();
+}
+document.querySelectorAll("nav button").forEach(b=>{
+ b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>{
+   x.classList.remove("active");x.classList.add("secondary");
+  });
+  b.classList.add("active");b.classList.remove("secondary");
+  ["chapters","log","tests","backup"].forEach(id=>
+   document.getElementById(id).classList.toggle("hidden",id!==b.dataset.tab));
+ };
+});
+function formObject(form){
+ return Object.fromEntries(new FormData(form).entries());
+}
+document.getElementById("logForm").onsubmit=e=>{
+ e.preventDefault();
+ const r=formObject(e.target);
+ r.hours=Number(r.hours);
+ if(!r.date||!r.topic||r.hours<=0||r.hours>24)return;
+ data.logs.push(r);save();e.target.reset();
+ renderAll();notify("Study session saved.");
+};
+document.getElementById("testForm").onsubmit=e=>{
+ e.preventDefault();
+ const r=formObject(e.target);
+ r.marks=Number(r.marks);r.maximum=Number(r.maximum);
+ if(!r.date||!r.name||r.maximum<=0||r.marks<0||
+ r.marks>r.maximum)return alert("Please check your marks.");
+ data.tests.push(r);save();e.target.reset();
+ renderAll();notify("Test saved.");
+};
+function exportData(){
+ const blob=new Blob([JSON.stringify(data,null,2)],
+ {type:"application/json"});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;a.download="NIOS-PCB-Backup.json";a.click();
+ URL.revokeObjectURL(url);notify("Backup downloaded.");
+}
+function importData(e){
+ const file=e.target.files[0];if(!file)return;
+ const reader=new FileReader();
+ reader.onload=()=>{
+  try{
+   const incoming=JSON.parse(reader.result);
+   if(!Array.isArray(incoming.chapters)||
+      !Array.isArray(incoming.logs)||
+      !Array.isArray(incoming.tests))throw Error();
+   if(!confirm("Replace current tracker data with this backup?"))return;
+   data=incoming;save();renderAll();notify("Backup restored.");
+  }catch(err){alert("Invalid backup file.");}
+ };
+ reader.readAsText(file);e.target.value="";
+}
+function resetData(){
+ if(!confirm("Permanently erase all tracker data in this browser?"))return;
+ if(!confirm("Are you sure? Export a backup first if needed."))return;
+ data=initialData();save();renderAll();notify("Tracker reset.");
+}
+document.querySelectorAll('input[type="date"]').forEach(i=>{
+ i.value=new Date().toLocaleDateString("en-CA");
+});
+renderAll();
+</script>
+</body>
+</html>
